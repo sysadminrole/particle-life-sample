@@ -1,3 +1,5 @@
+<!-- Particle Life project documentation -->
+
 # Particle Life
 
 Particle Life is a deterministic C++17 simulation with five interacting species in a toroidal world.
