@@ -9,9 +9,6 @@ bool close(double left, double right, double tolerance = 1.0e-12) {
     return std::abs(left - right) <= tolerance;
 }
 
-}  // namespace
-
-namespace {
 
 void step_simulations(particle_life::Simulation& first, particle_life::Simulation& second) {
     for (int step = 0; step < 20; ++step) {
