@@ -22,9 +22,11 @@ constexpr double height = Simulation::height;
 Simulation::Simulation(std::size_t particle_count, std::uint32_t seed)
     : particles_(particle_count), next_vx_(particle_count), next_vy_(particle_count) {
     std::mt19937 rng(seed);
-    std::uniform_real_distribution<double> x_dist(0.0, width);
-    std::uniform_real_distribution<double> y_dist(0.0, height);
-    std::uniform_real_distribution<double> velocity_dist(-0.08, 0.08);
+    initialize_affinities(rng);
+    initialize_particles(particle_count, rng);
+}
+
+void Simulation::initialize_affinities(std::mt19937& rng) {
     std::uniform_real_distribution<double> affinity_dist(-1.0, 1.0);
 
     for (std::size_t source = 0; source < species_count; ++source) {
@@ -33,6 +35,12 @@ Simulation::Simulation(std::size_t particle_count, std::uint32_t seed)
         }
         affinity_[source][source] = 0.45 + 0.08 * static_cast<double>(source);
     }
+}
+
+void Simulation::initialize_particles(std::size_t particle_count, std::mt19937& rng) {
+    std::uniform_real_distribution<double> x_dist(0.0, width);
+    std::uniform_real_distribution<double> y_dist(0.0, height);
+    std::uniform_real_distribution<double> velocity_dist(-0.08, 0.08);
 
     for (std::size_t i = 0; i < particle_count; ++i) {
         particles_[i] = {
