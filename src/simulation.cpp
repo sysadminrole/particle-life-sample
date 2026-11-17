@@ -114,10 +114,9 @@ void Simulation::apply_force(std::size_t particle_index, std::size_t other_index
     }
 
     const double distance = std::sqrt(distance_sq);
-    const double strength = distance < repulsion_radius
-                                ? distance / repulsion_radius - 1.0
-                                : affinity_[particle.species][other.species] *
-                                      (1.0 - std::abs(2.0 * distance / interaction_radius - 1.0));
+    const double envelope = 1.0 - std::abs(2.0 * distance / interaction_radius - 1.0);
+    const double strength = distance < repulsion_radius ? distance / repulsion_radius - 1.0
+                                                         : affinity_[particle.species][other.species] * envelope;
     const double scaled = force_scale * strength / distance;
     force_x += dx * scaled;
     force_y += dy * scaled;
