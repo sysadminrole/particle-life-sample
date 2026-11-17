@@ -2,11 +2,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <random>
 #include <vector>
-
-namespace std {
-class mt19937;
-}
 
 namespace particle_life {
 
