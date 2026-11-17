@@ -32,6 +32,9 @@ private:
     static double wrap(double value, double span);
 
     void calculate_next_velocities();
+    void accumulate_force(std::size_t source, double& force_x, double& force_y) const;
+    void apply_force(const Particle& particle, const Particle& other, double& force_x,
+                     double& force_y) const;
     void clamp_velocity(std::size_t index, double force_x, double force_y);
     void integrate_positions();
 
