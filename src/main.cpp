@@ -23,39 +23,50 @@ std::size_t parse_count(const char* value, const char* name) {
     }
 }
 
-int benchmark(std::size_t particle_count, std::size_t frame_count, const std::string& output_path) {
-    particle_life::Simulation simulation(particle_count, 20260724);
-    constexpr std::size_t warmup_frames = 5;
-    for (std::size_t frame = 0; frame < warmup_frames; ++frame) {
-        simulation.step();
-    }
-
-    const auto start = std::chrono::steady_clock::now();
+void step_simulation(particle_life::Simulation& simulation, std::size_t frame_count) {
     for (std::size_t frame = 0; frame < frame_count; ++frame) {
         simulation.step();
     }
-    const auto end = std::chrono::steady_clock::now();
+}
 
-    const double elapsed_seconds = std::chrono::duration<double>(end - start).count();
-    const double fps = static_cast<double>(frame_count) / elapsed_seconds;
-    const double frame_ms = elapsed_seconds * 1000.0 / static_cast<double>(frame_count);
+double time_steps(particle_life::Simulation& simulation, std::size_t frame_count) {
+    const auto start = std::chrono::steady_clock::now();
+    step_simulation(simulation, frame_count);
+    return std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+}
 
+void write_benchmark_result(const std::string& output_path, double fps) {
     std::ofstream output(output_path);
     if (!output) {
         throw std::runtime_error("could not open results file: " + output_path);
     }
     output << std::setprecision(12) << "{\"simulation_fps\":" << fps << "}\n";
+}
 
+void print_benchmark_result(const particle_life::Simulation& simulation, std::size_t particle_count,
+                            std::size_t frame_count, double fps, double frame_ms,
+                            const std::string& output_path) {
     std::cout << std::fixed << std::setprecision(3)
               << "particles=" << particle_count << " frames=" << frame_count
               << " fps=" << fps << " frame_ms=" << frame_ms
               << " checksum=" << simulation.checksum() << '\n'
               << "wrote " << output_path << '\n';
+}
+
+int benchmark(std::size_t particle_count, std::size_t frame_count, const std::string& output_path) {
+    particle_life::Simulation simulation(particle_count, 20260724);
+    constexpr std::size_t warmup_frames = 5;
+    step_simulation(simulation, warmup_frames);
+
+    const double elapsed_seconds = time_steps(simulation, frame_count);
+    const double fps = static_cast<double>(frame_count) / elapsed_seconds;
+    const double frame_ms = elapsed_seconds * 1000.0 / static_cast<double>(frame_count);
+    write_benchmark_result(output_path, fps);
+    print_benchmark_result(simulation, particle_count, frame_count, fps, frame_ms, output_path);
     return 0;
 }
 
-void stream(std::size_t particle_count, std::size_t frame_count) {
-    particle_life::Simulation simulation(particle_count, 20260724);
+void write_stream_header(std::size_t particle_count) {
     const std::array<char, 4> magic = {'S', 'W', 'A', 'R'};
     const auto count = static_cast<std::uint32_t>(particle_count);
     const float world_width = static_cast<float>(particle_life::Simulation::width);
@@ -65,23 +76,28 @@ void stream(std::size_t particle_count, std::size_t frame_count) {
     std::cout.write(reinterpret_cast<const char*>(&world_width), sizeof(world_width));
     std::cout.write(reinterpret_cast<const char*>(&world_height), sizeof(world_height));
     std::cout.flush();
+}
 
-    constexpr std::size_t settling_steps = 25;
-    for (std::size_t step = 0; step < settling_steps; ++step) {
-        simulation.step();
+void emit_stream_frame(particle_life::Simulation& simulation, std::uint64_t frame) {
+    simulation.step();
+    std::cout.write(reinterpret_cast<const char*>(&frame), sizeof(frame));
+    for (const auto& particle : simulation.particles()) {
+        const float x = static_cast<float>(particle.x);
+        const float y = static_cast<float>(particle.y);
+        std::cout.write(reinterpret_cast<const char*>(&x), sizeof(x));
+        std::cout.write(reinterpret_cast<const char*>(&y), sizeof(y));
+        std::cout.write(reinterpret_cast<const char*>(&particle.species), sizeof(particle.species));
     }
+    std::cout.flush();
+}
 
+void stream(std::size_t particle_count, std::size_t frame_count) {
+    particle_life::Simulation simulation(particle_count, 20260724);
+    write_stream_header(particle_count);
+    constexpr std::size_t settling_steps = 25;
+    step_simulation(simulation, settling_steps);
     for (std::uint64_t frame = 0; frame < frame_count; ++frame) {
-        simulation.step();
-        std::cout.write(reinterpret_cast<const char*>(&frame), sizeof(frame));
-        for (const auto& particle : simulation.particles()) {
-            const float x = static_cast<float>(particle.x);
-            const float y = static_cast<float>(particle.y);
-            std::cout.write(reinterpret_cast<const char*>(&x), sizeof(x));
-            std::cout.write(reinterpret_cast<const char*>(&y), sizeof(y));
-            std::cout.write(reinterpret_cast<const char*>(&particle.species), sizeof(particle.species));
-        }
-        std::cout.flush();
+        emit_stream_frame(simulation, frame);
     }
 }
 
@@ -89,6 +105,24 @@ void usage(const char* program) {
     std::cerr << "Usage:\n"
               << "  " << program << " benchmark [particles=2200] [frames=30] [results-path]\n"
               << "  " << program << " stream [particles=3500] [frames=100000000]\n";
+}
+
+int dispatch(int argc, char** argv) {
+    const std::string mode = argv[1];
+    if (mode == "benchmark") {
+        const auto particles = argc > 2 ? parse_count(argv[2], "particles") : 2200;
+        const auto frames = argc > 3 ? parse_count(argv[3], "frames") : 30;
+        const std::string output = argc > 4 ? argv[4] : "artemis_results.json";
+        return benchmark(particles, frames, output);
+    }
+    if (mode == "stream") {
+        const auto particles = argc > 2 ? parse_count(argv[2], "particles") : 3500;
+        const auto frames = argc > 3 ? parse_count(argv[3], "frames") : 100000000;
+        stream(particles, frames);
+        return 0;
+    }
+    usage(argv[0]);
+    return 2;
 }
 
 }  // namespace
@@ -99,23 +133,7 @@ int main(int argc, char** argv) {
             usage(argv[0]);
             return 2;
         }
-
-        const std::string mode = argv[1];
-        if (mode == "benchmark") {
-            const auto particles = argc > 2 ? parse_count(argv[2], "particles") : 2200;
-            const auto frames = argc > 3 ? parse_count(argv[3], "frames") : 30;
-            const std::string output = argc > 4 ? argv[4] : "artemis_results.json";
-            return benchmark(particles, frames, output);
-        }
-        if (mode == "stream") {
-            const auto particles = argc > 2 ? parse_count(argv[2], "particles") : 3500;
-            const auto frames = argc > 3 ? parse_count(argv[3], "frames") : 100000000;
-            stream(particles, frames);
-            return 0;
-        }
-
-        usage(argv[0]);
-        return 2;
+        return dispatch(argc, argv);
     } catch (const std::exception& error) {
         std::cerr << "error: " << error.what() << '\n';
         return 1;
