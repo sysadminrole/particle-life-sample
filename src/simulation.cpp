@@ -65,6 +65,11 @@ double Simulation::wrap(double value, double span) {
 }
 
 void Simulation::step() {
+    calculate_next_velocities();
+    integrate_positions();
+}
+
+void Simulation::calculate_next_velocities() {
     for (std::size_t i = 0; i < particles_.size(); ++i) {
         const Particle& particle = particles_[i];
         double force_x = 0.0;
@@ -98,19 +103,26 @@ void Simulation::step() {
             force_y += dy * scaled;
         }
 
-        double vx = (particle.vx + force_x) * damping;
-        double vy = (particle.vy + force_y) * damping;
-        const double speed_sq = vx * vx + vy * vy;
-        if (speed_sq > max_speed * max_speed) {
-            const double scale = max_speed / std::sqrt(speed_sq);
-            vx *= scale;
-            vy *= scale;
-        }
+        clamp_velocity(i, force_x, force_y);
+    }
+}
 
-        next_vx_[i] = vx;
-        next_vy_[i] = vy;
+void Simulation::clamp_velocity(std::size_t index, double force_x, double force_y) {
+    const Particle& particle = particles_[index];
+    double vx = (particle.vx + force_x) * damping;
+    double vy = (particle.vy + force_y) * damping;
+    const double speed_sq = vx * vx + vy * vy;
+    if (speed_sq > max_speed * max_speed) {
+        const double scale = max_speed / std::sqrt(speed_sq);
+        vx *= scale;
+        vy *= scale;
     }
 
+    next_vx_[index] = vx;
+    next_vy_[index] = vy;
+}
+
+void Simulation::integrate_positions() {
     for (std::size_t i = 0; i < particles_.size(); ++i) {
         Particle& particle = particles_[i];
         particle.vx = next_vx_[i];
