@@ -145,7 +145,7 @@ class WindowRenderer:
         self.root.mainloop()
 
 
-def main():
+def build_parser():
     project = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description="Render Particle Life in a Tk window")
     parser.add_argument("--binary", type=Path, default=project / "build" / "particle_life")
@@ -153,15 +153,10 @@ def main():
     parser.add_argument("--duration", type=float, default=10.0)
     parser.add_argument("--width", type=int, default=1100)
     parser.add_argument("--height", type=int, default=620)
-    args = parser.parse_args()
+    return parser
 
-    if args.particles <= 0:
-        parser.error("--particles must be positive")
-    if args.duration <= 0:
-        parser.error("--duration must be positive")
-    if not args.binary.is_file():
-        parser.error(f"simulation binary not found: {args.binary}")
 
+def launch_renderer(args):
     WindowRenderer(
         args.binary,
         args.particles,
@@ -169,6 +164,18 @@ def main():
         args.height,
         args.duration,
     ).run()
+
+
+def main():
+    parser = build_parser()
+    args = parser.parse_args()
+    if args.particles <= 0:
+        parser.error("--particles must be positive")
+    if args.duration <= 0:
+        parser.error("--duration must be positive")
+    if not args.binary.is_file():
+        parser.error(f"simulation binary not found: {args.binary}")
+    launch_renderer(args)
 
 
 if __name__ == "__main__":
