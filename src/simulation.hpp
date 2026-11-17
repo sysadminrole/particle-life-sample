@@ -31,6 +31,10 @@ private:
     static double wrapped_delta(double delta, double span);
     static double wrap(double value, double span);
 
+    void calculate_velocities();
+    void update_velocity(std::size_t particle_index);
+    void move_particles();
+
     std::vector<Particle> particles_;
     std::vector<double> next_vx_;
     std::vector<double> next_vy_;
