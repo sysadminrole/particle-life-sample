@@ -26,22 +26,28 @@ bool validate_particle_count(const particle_life::Simulation& first,
     return true;
 }
 
+bool validate_particle(const particle_life::Particle& left, const particle_life::Particle& right,
+                       std::size_t index) {
+    if (!close(left.x, right.x) || !close(left.y, right.y) || !close(left.vx, right.vx) ||
+        !close(left.vy, right.vy) || left.species != right.species) {
+        std::cerr << "simulation is not deterministic at particle " << index << '\n';
+        return false;
+    }
+    if (left.x < 0.0 || left.x >= particle_life::Simulation::width || left.y < 0.0 ||
+        left.y >= particle_life::Simulation::height || !std::isfinite(left.vx) ||
+        !std::isfinite(left.vy)) {
+        std::cerr << "particle escaped simulation bounds at index " << index << '\n';
+        return false;
+    }
+    return true;
+}
+
 bool validate_particles(const particle_life::Simulation& first,
                         const particle_life::Simulation& second) {
     const auto& first_particles = first.particles();
     const auto& second_particles = second.particles();
     for (std::size_t i = 0; i < first_particles.size(); ++i) {
-        const auto& left = first_particles[i];
-        const auto& right = second_particles[i];
-        if (!close(left.x, right.x) || !close(left.y, right.y) || !close(left.vx, right.vx) ||
-            !close(left.vy, right.vy) || left.species != right.species) {
-            std::cerr << "simulation is not deterministic at particle " << i << '\n';
-            return false;
-        }
-        if (left.x < 0.0 || left.x >= particle_life::Simulation::width || left.y < 0.0 ||
-            left.y >= particle_life::Simulation::height || !std::isfinite(left.vx) ||
-            !std::isfinite(left.vy)) {
-            std::cerr << "particle escaped simulation bounds at index " << i << '\n';
+        if (!validate_particle(first_particles[i], second_particles[i], i)) {
             return false;
         }
     }
