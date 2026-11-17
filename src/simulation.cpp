@@ -79,7 +79,23 @@ void Simulation::update_velocity(std::size_t particle_index) {
     const Particle& particle = particles_[particle_index];
     double force_x = 0.0;
     double force_y = 0.0;
+    accumulate_force(particle_index, force_x, force_y);
 
+    double vx = (particle.vx + force_x) * damping;
+    double vy = (particle.vy + force_y) * damping;
+    const double speed_sq = vx * vx + vy * vy;
+    if (speed_sq > max_speed * max_speed) {
+        const double scale = max_speed / std::sqrt(speed_sq);
+        vx *= scale;
+        vy *= scale;
+    }
+
+    next_vx_[particle_index] = vx;
+    next_vy_[particle_index] = vy;
+}
+
+void Simulation::accumulate_force(std::size_t particle_index, double& force_x, double& force_y) const {
+    const Particle& particle = particles_[particle_index];
     for (std::size_t j = 0; j < particles_.size(); ++j) {
         if (particle_index == j) {
             continue;
@@ -89,7 +105,6 @@ void Simulation::update_velocity(std::size_t particle_index) {
         const double dx = wrapped_delta(other.x - particle.x, width);
         const double dy = wrapped_delta(other.y - particle.y, height);
         const double distance_sq = dx * dx + dy * dy;
-
         if (distance_sq <= 1.0e-12 || distance_sq >= interaction_radius_sq) {
             continue;
         }
@@ -103,18 +118,6 @@ void Simulation::update_velocity(std::size_t particle_index) {
         force_x += dx * scaled;
         force_y += dy * scaled;
     }
-
-    double vx = (particle.vx + force_x) * damping;
-    double vy = (particle.vy + force_y) * damping;
-    const double speed_sq = vx * vx + vy * vy;
-    if (speed_sq > max_speed * max_speed) {
-        const double scale = max_speed / std::sqrt(speed_sq);
-        vx *= scale;
-        vy *= scale;
-    }
-
-    next_vx_[particle_index] = vx;
-    next_vy_[particle_index] = vy;
 }
 
 void Simulation::move_particles() {
