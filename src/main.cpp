@@ -91,6 +91,25 @@ void usage(const char* program) {
               << "  " << program << " stream [particles=3500] [frames=100000000]\n";
 }
 
+int dispatch_mode(int argc, char** argv) {
+    const std::string mode = argv[1];
+    if (mode == "benchmark") {
+        const auto particles = argc > 2 ? parse_count(argv[2], "particles") : 2200;
+        const auto frames = argc > 3 ? parse_count(argv[3], "frames") : 30;
+        const std::string output = argc > 4 ? argv[4] : "artemis_results.json";
+        return benchmark(particles, frames, output);
+    }
+    if (mode == "stream") {
+        const auto particles = argc > 2 ? parse_count(argv[2], "particles") : 3500;
+        const auto frames = argc > 3 ? parse_count(argv[3], "frames") : 100000000;
+        stream(particles, frames);
+        return 0;
+    }
+
+    usage(argv[0]);
+    return 2;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -99,23 +118,7 @@ int main(int argc, char** argv) {
             usage(argv[0]);
             return 2;
         }
-
-        const std::string mode = argv[1];
-        if (mode == "benchmark") {
-            const auto particles = argc > 2 ? parse_count(argv[2], "particles") : 2200;
-            const auto frames = argc > 3 ? parse_count(argv[3], "frames") : 30;
-            const std::string output = argc > 4 ? argv[4] : "artemis_results.json";
-            return benchmark(particles, frames, output);
-        }
-        if (mode == "stream") {
-            const auto particles = argc > 2 ? parse_count(argv[2], "particles") : 3500;
-            const auto frames = argc > 3 ? parse_count(argv[3], "frames") : 100000000;
-            stream(particles, frames);
-            return 0;
-        }
-
-        usage(argv[0]);
-        return 2;
+        return dispatch_mode(argc, argv);
     } catch (const std::exception& error) {
         std::cerr << "error: " << error.what() << '\n';
         return 1;
