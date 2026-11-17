@@ -51,7 +51,7 @@ bool validate_particles(const particle_life::Simulation& first,
     return true;
 }
 
-bool validate_checksum(const particle_life::Simulation& simulation, double result) {
+bool validate_checksum(double result) {
     constexpr double expected_checksum = 610659.60219911579;
     if (!std::isfinite(result) || !close(result, expected_checksum, 1.0e-6)) {
         std::cerr.precision(17);
