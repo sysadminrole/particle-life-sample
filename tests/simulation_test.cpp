@@ -67,7 +67,7 @@ int main() {
     }
 
     const double result = first.checksum();
-    if (!checksum_is_valid(first, result)) {
+    if (!checksum_is_valid(result)) {
         return 1;
     }
 
