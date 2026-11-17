@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <random>
 #include <vector>
 
 namespace particle_life {
