@@ -71,40 +71,39 @@ void Simulation::step() {
 
 void Simulation::calculate_next_velocities() {
     for (std::size_t i = 0; i < particles_.size(); ++i) {
-        const Particle& particle = particles_[i];
         double force_x = 0.0;
         double force_y = 0.0;
-
-        for (std::size_t j = 0; j < particles_.size(); ++j) {
-            if (i == j) {
-                continue;
-            }
-
-            const Particle& other = particles_[j];
-            const double dx = wrapped_delta(other.x - particle.x, width);
-            const double dy = wrapped_delta(other.y - particle.y, height);
-            const double distance_sq = dx * dx + dy * dy;
-
-            if (distance_sq <= 1.0e-12 || distance_sq >= interaction_radius_sq) {
-                continue;
-            }
-
-            const double distance = std::sqrt(distance_sq);
-            double strength;
-            if (distance < repulsion_radius) {
-                strength = distance / repulsion_radius - 1.0;
-            } else {
-                const double envelope = 1.0 - std::abs(2.0 * distance / interaction_radius - 1.0);
-                strength = affinity_[particle.species][other.species] * envelope;
-            }
-
-            const double scaled = force_scale * strength / distance;
-            force_x += dx * scaled;
-            force_y += dy * scaled;
-        }
-
+        accumulate_force(i, force_x, force_y);
         clamp_velocity(i, force_x, force_y);
     }
+}
+
+void Simulation::accumulate_force(std::size_t source, double& force_x, double& force_y) const {
+    const Particle& particle = particles_[source];
+    for (std::size_t target = 0; target < particles_.size(); ++target) {
+        if (source != target) {
+            apply_force(particle, particles_[target], force_x, force_y);
+        }
+    }
+}
+
+void Simulation::apply_force(const Particle& particle, const Particle& other, double& force_x,
+                             double& force_y) const {
+    const double dx = wrapped_delta(other.x - particle.x, width);
+    const double dy = wrapped_delta(other.y - particle.y, height);
+    const double distance_sq = dx * dx + dy * dy;
+    if (distance_sq <= 1.0e-12 || distance_sq >= interaction_radius_sq) {
+        return;
+    }
+
+    const double distance = std::sqrt(distance_sq);
+    const double strength = distance < repulsion_radius
+                                ? distance / repulsion_radius - 1.0
+                                : affinity_[particle.species][other.species] *
+                                      (1.0 - std::abs(2.0 * distance / interaction_radius - 1.0));
+    const double scaled = force_scale * strength / distance;
+    force_x += dx * scaled;
+    force_y += dy * scaled;
 }
 
 void Simulation::clamp_velocity(std::size_t index, double force_x, double force_y) {
