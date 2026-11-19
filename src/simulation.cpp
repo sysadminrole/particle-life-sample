@@ -71,10 +71,11 @@ void Simulation::step() {
 }
 
 void Simulation::accumulate_forces() {
+    std::fill(next_vx_.begin(), next_vx_.end(), 0.0);
+    std::fill(next_vy_.begin(), next_vy_.end(), 0.0);
+
     for (std::size_t i = 0; i < particles_.size(); ++i) {
         const Particle& particle = particles_[i];
-        double force_x = 0.0;
-        double force_y = 0.0;
 
         for (std::size_t j = 0; j < particles_.size(); ++j) {
             if (i == j) {
