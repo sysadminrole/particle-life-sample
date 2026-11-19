@@ -92,10 +92,14 @@ void Simulation::accumulate_forces() {
             }
 
             const double distance = std::sqrt(distance_sq);
-            const double strength = distance < repulsion_radius
-                                        ? distance / repulsion_radius - 1.0
-                                        : affinity_[particle.species][other.species] *
-                                              (1.0 - std::abs(2.0 * distance / interaction_radius - 1.0));
+            double strength;
+            if (distance < repulsion_radius) {
+                strength = distance / repulsion_radius - 1.0;
+            } else {
+                const double envelope = 1.0 - std::abs(2.0 * distance / interaction_radius - 1.0);
+                strength = affinity_[particle.species][other.species] * envelope;
+            }
+
             const double scaled = force_scale * strength / distance;
             next_vx_[i] += dx * scaled;
             next_vy_[i] += dy * scaled;
