@@ -62,9 +62,7 @@ int main() {
         return 1;
     }
     const double result = first.checksum();
-    if (!has_expected_checksum(result)) {
-        return 1;
-    }
+    if (!has_expected_checksum(result)) return 1;
     std::cout.precision(17);
     std::cout << "deterministic checksum: " << result << '\n';
     return 0;
