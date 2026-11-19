@@ -64,8 +64,7 @@ int benchmark(std::size_t particle_count, std::size_t frame_count, const std::st
     return 0;
 }
 
-void stream(std::size_t particle_count, std::size_t frame_count) {
-    particle_life::Simulation simulation(particle_count, 20260724);
+void write_stream_header(std::size_t particle_count) {
     const std::array<char, 4> magic = {'S', 'W', 'A', 'R'};
     const auto count = static_cast<std::uint32_t>(particle_count);
     const float world_width = static_cast<float>(particle_life::Simulation::width);
@@ -75,23 +74,27 @@ void stream(std::size_t particle_count, std::size_t frame_count) {
     std::cout.write(reinterpret_cast<const char*>(&world_width), sizeof(world_width));
     std::cout.write(reinterpret_cast<const char*>(&world_height), sizeof(world_height));
     std::cout.flush();
+}
 
-    constexpr std::size_t settling_steps = 25;
-    for (std::size_t step = 0; step < settling_steps; ++step) {
-        simulation.step();
+void write_stream_frame(const particle_life::Simulation& simulation, std::uint64_t frame) {
+    std::cout.write(reinterpret_cast<const char*>(&frame), sizeof(frame));
+    for (const auto& particle : simulation.particles()) {
+        const float x = static_cast<float>(particle.x);
+        const float y = static_cast<float>(particle.y);
+        std::cout.write(reinterpret_cast<const char*>(&x), sizeof(x));
+        std::cout.write(reinterpret_cast<const char*>(&y), sizeof(y));
+        std::cout.write(reinterpret_cast<const char*>(&particle.species), sizeof(particle.species));
     }
+    std::cout.flush();
+}
 
+void stream(std::size_t particle_count, std::size_t frame_count) {
+    particle_life::Simulation simulation(particle_count, 20260724);
+    write_stream_header(particle_count);
+    step_simulation(simulation, 25);
     for (std::uint64_t frame = 0; frame < frame_count; ++frame) {
         simulation.step();
-        std::cout.write(reinterpret_cast<const char*>(&frame), sizeof(frame));
-        for (const auto& particle : simulation.particles()) {
-            const float x = static_cast<float>(particle.x);
-            const float y = static_cast<float>(particle.y);
-            std::cout.write(reinterpret_cast<const char*>(&x), sizeof(x));
-            std::cout.write(reinterpret_cast<const char*>(&y), sizeof(y));
-            std::cout.write(reinterpret_cast<const char*>(&particle.species), sizeof(particle.species));
-        }
-        std::cout.flush();
+        write_stream_frame(simulation, frame);
     }
 }
 
