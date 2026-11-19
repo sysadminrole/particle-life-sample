@@ -29,6 +29,7 @@ public:
 
 private:
     void accumulate_forces();
+    void update_velocities();
     void update_positions();
     static double wrapped_delta(double delta, double span);
     static double wrap(double value, double span);
