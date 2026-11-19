@@ -63,7 +63,7 @@ int main() {
         return 1;
     }
     const double result = first.checksum();
-    if (!has_expected_checksum(first, result)) {
+    if (!has_expected_checksum(result)) {
         return 1;
     }
     std::cout.precision(17);
