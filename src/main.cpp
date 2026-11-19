@@ -23,34 +23,44 @@ std::size_t parse_count(const char* value, const char* name) {
     }
 }
 
-int benchmark(std::size_t particle_count, std::size_t frame_count, const std::string& output_path) {
-    particle_life::Simulation simulation(particle_count, 20260724);
-    constexpr std::size_t warmup_frames = 5;
-    for (std::size_t frame = 0; frame < warmup_frames; ++frame) {
-        simulation.step();
-    }
-
-    const auto start = std::chrono::steady_clock::now();
+void step_simulation(particle_life::Simulation& simulation, std::size_t frame_count) {
     for (std::size_t frame = 0; frame < frame_count; ++frame) {
         simulation.step();
     }
-    const auto end = std::chrono::steady_clock::now();
+}
 
-    const double elapsed_seconds = std::chrono::duration<double>(end - start).count();
-    const double fps = static_cast<double>(frame_count) / elapsed_seconds;
-    const double frame_ms = elapsed_seconds * 1000.0 / static_cast<double>(frame_count);
+double time_simulation(particle_life::Simulation& simulation, std::size_t frame_count) {
+    const auto start = std::chrono::steady_clock::now();
+    step_simulation(simulation, frame_count);
+    return std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+}
 
+void write_results(const std::string& output_path, double fps) {
     std::ofstream output(output_path);
     if (!output) {
         throw std::runtime_error("could not open results file: " + output_path);
     }
     output << std::setprecision(12) << "{\"simulation_fps\":" << fps << "}\n";
+}
 
+void report_benchmark(std::size_t particle_count, std::size_t frame_count,
+                      double fps, double frame_ms, std::uint64_t checksum,
+                      const std::string& output_path) {
     std::cout << std::fixed << std::setprecision(3)
               << "particles=" << particle_count << " frames=" << frame_count
               << " fps=" << fps << " frame_ms=" << frame_ms
-              << " checksum=" << simulation.checksum() << '\n'
+              << " checksum=" << checksum << '\n'
               << "wrote " << output_path << '\n';
+}
+
+int benchmark(std::size_t particle_count, std::size_t frame_count, const std::string& output_path) {
+    particle_life::Simulation simulation(particle_count, 20260724);
+    step_simulation(simulation, 5);
+    const double elapsed_seconds = time_simulation(simulation, frame_count);
+    const double fps = static_cast<double>(frame_count) / elapsed_seconds;
+    const double frame_ms = elapsed_seconds * 1000.0 / static_cast<double>(frame_count);
+    write_results(output_path, fps);
+    report_benchmark(particle_count, frame_count, fps, frame_ms, simulation.checksum(), output_path);
     return 0;
 }
 
