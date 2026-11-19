@@ -31,6 +31,10 @@ private:
     static double wrapped_delta(double delta, double span);
     static double wrap(double value, double span);
     void update_velocities();
+    void accumulate_force(const Particle& particle, std::size_t particle_index, double& force_x,
+                          double& force_y) const;
+    double interaction_strength(const Particle& particle, const Particle& other,
+                                double distance) const;
     void update_positions();
 
     std::vector<Particle> particles_;
