@@ -28,6 +28,7 @@ public:
     static constexpr std::size_t species_count = 5;
 
 private:
+    void initialize_affinities(std::mt19937& rng);
     static double wrapped_delta(double delta, double span);
     static double wrap(double value, double span);
 
