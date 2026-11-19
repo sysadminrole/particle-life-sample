@@ -65,39 +65,35 @@ double Simulation::wrap(double value, double span) {
 }
 
 void Simulation::step() {
+    update_velocities();
+    update_positions();
+}
+
+void Simulation::update_velocities() {
     for (std::size_t i = 0; i < particles_.size(); ++i) {
         const Particle& particle = particles_[i];
         double force_x = 0.0;
         double force_y = 0.0;
-
         for (std::size_t j = 0; j < particles_.size(); ++j) {
             if (i == j) {
                 continue;
             }
-
             const Particle& other = particles_[j];
             const double dx = wrapped_delta(other.x - particle.x, width);
             const double dy = wrapped_delta(other.y - particle.y, height);
             const double distance_sq = dx * dx + dy * dy;
-
             if (distance_sq <= 1.0e-12 || distance_sq >= interaction_radius_sq) {
                 continue;
             }
-
             const double distance = std::sqrt(distance_sq);
-            double strength;
-            if (distance < repulsion_radius) {
-                strength = distance / repulsion_radius - 1.0;
-            } else {
-                const double envelope = 1.0 - std::abs(2.0 * distance / interaction_radius - 1.0);
-                strength = affinity_[particle.species][other.species] * envelope;
-            }
-
+            const double strength = distance < repulsion_radius
+                                        ? distance / repulsion_radius - 1.0
+                                        : affinity_[particle.species][other.species] *
+                                              (1.0 - std::abs(2.0 * distance / interaction_radius - 1.0));
             const double scaled = force_scale * strength / distance;
             force_x += dx * scaled;
             force_y += dy * scaled;
         }
-
         double vx = (particle.vx + force_x) * damping;
         double vy = (particle.vy + force_y) * damping;
         const double speed_sq = vx * vx + vy * vy;
@@ -106,11 +102,12 @@ void Simulation::step() {
             vx *= scale;
             vy *= scale;
         }
-
         next_vx_[i] = vx;
         next_vy_[i] = vy;
     }
+}
 
+void Simulation::update_positions() {
     for (std::size_t i = 0; i < particles_.size(); ++i) {
         Particle& particle = particles_[i];
         particle.vx = next_vx_[i];
