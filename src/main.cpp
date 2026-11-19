@@ -23,19 +23,20 @@ std::size_t parse_count(const char* value, const char* name) {
     }
 }
 
-int benchmark(std::size_t particle_count, std::size_t frame_count, const std::string& output_path) {
-    particle_life::Simulation simulation(particle_count, 20260724);
-    constexpr std::size_t warmup_frames = 5;
-    for (std::size_t frame = 0; frame < warmup_frames; ++frame) {
-        simulation.step();
-    }
-
-    const auto start = std::chrono::steady_clock::now();
+void advance_frames(particle_life::Simulation& simulation, std::size_t frame_count) {
     for (std::size_t frame = 0; frame < frame_count; ++frame) {
         simulation.step();
     }
-    const auto end = std::chrono::steady_clock::now();
+}
 
+int benchmark(std::size_t particle_count, std::size_t frame_count, const std::string& output_path) {
+    particle_life::Simulation simulation(particle_count, 20260724);
+    constexpr std::size_t warmup_frames = 5;
+    advance_frames(simulation, warmup_frames);
+
+    const auto start = std::chrono::steady_clock::now();
+    advance_frames(simulation, frame_count);
+    const auto end = std::chrono::steady_clock::now();
     const double elapsed_seconds = std::chrono::duration<double>(end - start).count();
     const double fps = static_cast<double>(frame_count) / elapsed_seconds;
     const double frame_ms = elapsed_seconds * 1000.0 / static_cast<double>(frame_count);
