@@ -29,6 +29,14 @@ void advance_frames(particle_life::Simulation& simulation, std::size_t frame_cou
     }
 }
 
+void write_benchmark_result(const std::string& output_path, double fps) {
+    std::ofstream output(output_path);
+    if (!output) {
+        throw std::runtime_error("could not open results file: " + output_path);
+    }
+    output << std::setprecision(12) << "{\"simulation_fps\":" << fps << "}\n";
+}
+
 int benchmark(std::size_t particle_count, std::size_t frame_count, const std::string& output_path) {
     particle_life::Simulation simulation(particle_count, 20260724);
     constexpr std::size_t warmup_frames = 5;
@@ -40,13 +48,7 @@ int benchmark(std::size_t particle_count, std::size_t frame_count, const std::st
     const double elapsed_seconds = std::chrono::duration<double>(end - start).count();
     const double fps = static_cast<double>(frame_count) / elapsed_seconds;
     const double frame_ms = elapsed_seconds * 1000.0 / static_cast<double>(frame_count);
-
-    std::ofstream output(output_path);
-    if (!output) {
-        throw std::runtime_error("could not open results file: " + output_path);
-    }
-    output << std::setprecision(12) << "{\"simulation_fps\":" << fps << "}\n";
-
+    write_benchmark_result(output_path, fps);
     std::cout << std::fixed << std::setprecision(3)
               << "particles=" << particle_count << " frames=" << frame_count
               << " fps=" << fps << " frame_ms=" << frame_ms
