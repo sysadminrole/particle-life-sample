@@ -36,7 +36,7 @@ bool particles_are_valid_and_deterministic(const particle_life::Simulation& firs
     return true;
 }
 
-bool has_expected_checksum(const particle_life::Simulation& simulation, double result) {
+bool has_expected_checksum(double result) {
     constexpr double expected_checksum = 610659.60219911579;
     if (std::isfinite(result) && close(result, expected_checksum, 1.0e-6)) {
         return true;
