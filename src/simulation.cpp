@@ -65,10 +65,17 @@ double Simulation::wrap(double value, double span) {
 }
 
 void Simulation::step() {
+    accumulate_forces();
+    update_velocities();
+    update_positions();
+}
+
+void Simulation::accumulate_forces() {
+    std::fill(next_vx_.begin(), next_vx_.end(), 0.0);
+    std::fill(next_vy_.begin(), next_vy_.end(), 0.0);
+
     for (std::size_t i = 0; i < particles_.size(); ++i) {
         const Particle& particle = particles_[i];
-        double force_x = 0.0;
-        double force_y = 0.0;
 
         for (std::size_t j = 0; j < particles_.size(); ++j) {
             if (i == j) {
@@ -94,23 +101,28 @@ void Simulation::step() {
             }
 
             const double scaled = force_scale * strength / distance;
-            force_x += dx * scaled;
-            force_y += dy * scaled;
+            next_vx_[i] += dx * scaled;
+            next_vy_[i] += dy * scaled;
         }
+    }
+}
 
-        double vx = (particle.vx + force_x) * damping;
-        double vy = (particle.vy + force_y) * damping;
+void Simulation::update_velocities() {
+    for (std::size_t i = 0; i < particles_.size(); ++i) {
+        double vx = (particles_[i].vx + next_vx_[i]) * damping;
+        double vy = (particles_[i].vy + next_vy_[i]) * damping;
         const double speed_sq = vx * vx + vy * vy;
         if (speed_sq > max_speed * max_speed) {
             const double scale = max_speed / std::sqrt(speed_sq);
             vx *= scale;
             vy *= scale;
         }
-
         next_vx_[i] = vx;
         next_vy_[i] = vy;
     }
+}
 
+void Simulation::update_positions() {
     for (std::size_t i = 0; i < particles_.size(); ++i) {
         Particle& particle = particles_[i];
         particle.vx = next_vx_[i];
