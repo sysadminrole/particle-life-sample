@@ -27,8 +27,7 @@ bool particles_are_valid_and_deterministic(const particle_life::Simulation& firs
             return false;
         }
         if (left.x < 0.0 || left.x >= particle_life::Simulation::width || left.y < 0.0 ||
-            left.y >= particle_life::Simulation::height || !std::isfinite(left.vx) ||
-            !std::isfinite(left.vy)) {
+            left.y >= particle_life::Simulation::height || !std::isfinite(left.vx) || !std::isfinite(left.vy)) {
             std::cerr << "particle escaped simulation bounds at index " << i << '\n';
             return false;
         }
