@@ -29,6 +29,9 @@ public:
 
 private:
     void accumulate_forces();
+    void calculate_velocity(std::size_t index);
+    void accumulate_force(const Particle& particle, std::size_t other_index, double& force_x,
+                          double& force_y) const;
     void integrate_velocities_and_positions();
     static double wrapped_delta(double delta, double span);
     static double wrap(double value, double span);
