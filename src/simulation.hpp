@@ -28,6 +28,8 @@ public:
     static constexpr std::size_t species_count = 5;
 
 private:
+    void accumulate_forces();
+    void integrate_velocities_and_positions();
     static double wrapped_delta(double delta, double span);
     static double wrap(double value, double span);
 
