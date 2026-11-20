@@ -97,10 +97,13 @@ void Simulation::calculate_velocity(std::size_t index) {
 void Simulation::accumulate_force(const Particle& particle, std::size_t other_index,
                                   double& force_x, double& force_y) const {
     const Particle& other = particles_[other_index];
+    if (&particle == &other) {
+        return;
+    }
     const double dx = wrapped_delta(other.x - particle.x, width);
     const double dy = wrapped_delta(other.y - particle.y, height);
     const double distance_sq = dx * dx + dy * dy;
-    if (&particle == &other || distance_sq <= 1.0e-12 || distance_sq >= interaction_radius_sq) {
+    if (distance_sq <= 1.0e-12 || distance_sq >= interaction_radius_sq) {
         return;
     }
     const double distance = std::sqrt(distance_sq);
