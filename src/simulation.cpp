@@ -65,6 +65,11 @@ double Simulation::wrap(double value, double span) {
 }
 
 void Simulation::step() {
+    calculate_velocities();
+    update_positions();
+}
+
+void Simulation::calculate_velocities() {
     for (std::size_t i = 0; i < particles_.size(); ++i) {
         const Particle& particle = particles_[i];
         double force_x = 0.0;
@@ -110,7 +115,9 @@ void Simulation::step() {
         next_vx_[i] = vx;
         next_vy_[i] = vy;
     }
+}
 
+void Simulation::update_positions() {
     for (std::size_t i = 0; i < particles_.size(); ++i) {
         Particle& particle = particles_[i];
         particle.vx = next_vx_[i];
