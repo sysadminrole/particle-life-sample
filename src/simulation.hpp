@@ -34,6 +34,8 @@ private:
     void calculate_velocity(std::size_t index);
     void accumulate_force(const Particle& particle, std::size_t index, double& force_x,
                           double& force_y) const;
+    void accumulate_pair_force(const Particle& particle, const Particle& other, double& force_x,
+                               double& force_y) const;
     void update_positions();
 
     std::vector<Particle> particles_;
