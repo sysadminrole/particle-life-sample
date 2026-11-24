@@ -30,6 +30,13 @@ public:
 private:
     static double wrapped_delta(double delta, double span);
     static double wrap(double value, double span);
+    void calculate_velocities();
+    void calculate_velocity(std::size_t index);
+    void accumulate_force(const Particle& particle, std::size_t index, double& force_x,
+                          double& force_y) const;
+    void accumulate_pair_force(const Particle& particle, const Particle& other, double& force_x,
+                               double& force_y) const;
+    void update_positions();
 
     std::vector<Particle> particles_;
     std::vector<double> next_vx_;
